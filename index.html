@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cofre de Senhas</title>
+<style>
+:root{--bg:#E9EEF1;--panel:#fff;--ink:#15233B;--mut:#5c6b80;--line:#cfd8e0;--acc:#1F5F5B;--onacc:#fff;--brass:#C48A12;--danger:#B3342B;--r:10px;
+font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;box-sizing:border-box}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0F1A22;--panel:#16252F;--ink:#E6EDF2;--mut:#93A4B3;--line:#274050;--acc:#5FB3A9;--onacc:#0b1a1a;--brass:#E3A92B;--danger:#EE7A6F}}
+:root[data-theme=dark]{--bg:#0F1A22;--panel:#16252F;--ink:#E6EDF2;--mut:#93A4B3;--line:#274050;--acc:#5FB3A9;--onacc:#0b1a1a;--brass:#E3A92B;--danger:#EE7A6F}
+*{box-sizing:inherit}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-size:15px}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;margin:0;font-weight:700}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 12px}
+button:hover{border-color:var(--acc)}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.pri{background:var(--acc);color:var(--onacc);border-color:var(--acc);font-weight:600}
+.ghost{background:transparent}
+.dg{color:var(--danger)}
+.sm{padding:5px 9px;font-size:13px}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+label{display:block;font-size:13px;color:var(--mut);margin:12px 0 4px}
+#app{display:grid;grid-template-columns:270px 1fr;height:100%}
+aside{background:var(--panel);border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:6px;overflow:auto;padding-top:calc(18px + env(safe-area-inset-top,0px))}
+aside h1{font-size:22px;margin-bottom:10px}
+.pasta{display:flex;justify-content:space-between;gap:8px;width:100%;text-align:left;border:0;border-left:4px solid transparent;border-radius:6px;background:transparent}
+.pasta.on{background:var(--bg);border-left-color:var(--brass);font-weight:600}
+.pasta small{color:var(--mut)}
+.sp{flex:1}
+main{overflow:auto;padding:22px;padding-top:calc(22px + env(safe-area-inset-top,0px));padding-bottom:calc(40px + env(safe-area-inset-bottom,0px))}
+.top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:14px}
+.top h2{font-size:26px}
+.acts{display:flex;flex-wrap:wrap;gap:6px}
+.desc{color:var(--mut);margin:0 0 14px}
+.pessoa{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);margin-bottom:16px;overflow:hidden}
+.ph{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.ph h3{font-size:18px}
+.ph small{color:var(--mut);display:block;font-family:"Segoe UI",system-ui,sans-serif;font-weight:400}
+.conta{padding:12px 14px;border-bottom:1px solid var(--line)}
+.conta:last-child{border-bottom:0}
+.ct{font-weight:600;margin-bottom:6px}
+.ln{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0}
+.ln span.k{width:62px;color:var(--mut);font-size:13px}
+.ln code{font-family:ui-monospace,Consolas,monospace;word-break:break-all;background:var(--bg);padding:3px 7px;border-radius:6px}
+.nt{color:var(--mut);font-size:14px;margin-top:6px;white-space:pre-wrap}
+.empty{border:1px dashed var(--line);border-radius:var(--r);padding:28px;text-align:center;color:var(--mut)}
+.srch{max-width:360px}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);width:min(440px,92vw);padding:20px}
+dialog::backdrop{background:rgba(8,16,24,.55)}
+.row{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.pw{display:flex;gap:6px}
+.pw button{white-space:nowrap}
+#lock{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;padding:20px;z-index:5}
+#lock form{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:26px;width:min(380px,100%)}
+#lock p{color:var(--mut);margin:6px 0 0}
+.err{color:var(--danger);min-height:20px;margin-top:10px;font-size:14px}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
+#toast.on{opacity:1}
+@media(max-width:760px){#app{grid-template-columns:1fr;height:auto}aside{border-right:0;border-bottom:1px solid var(--line)}main{overflow:visible}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="lock"><form id="lf" autocomplete="off"></form></div>
+<div id="app" hidden>
+  <aside id="side"></aside>
+  <main id="main"></main>
+</div>
+<dialog id="dlg"><form id="df"></form></dialog>
+<input type="file" id="file" accept=".json,application/json" hidden>
+<input type="file" id="fileCsv" accept=".csv,text/csv" hidden>
+<div id="toast" role="status"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,10);
+const S={d:null,key:null,salt:null,sel:null,q:'',shown:new Set()};
+
+/* ---------- criptografia (AES-GCM + PBKDF2) ---------- */
+const b64=u=>{let s='';u.forEach(b=>s+=String.fromCharCode(b));return btoa(s)};
+const unb64=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
+async function derive(pw,salt){
+  const m=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},m,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function seal(obj,key,salt){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify(obj)));
+  return {v:1,salt:b64(salt),iv:b64(iv),data:b64(new Uint8Array(ct))};
+}
+async function open(blob,pw){
+  const salt=unb64(blob.salt),key=await derive(pw,salt);
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(blob.iv)},key,unb64(blob.data));
+  return {d:JSON.parse(new TextDecoder().decode(pt)),key,salt};
+}
+async function save(){
+  try{localStorage.setItem('cofre',JSON.stringify(await seal(S.d,S.key,S.salt)))}
+  catch(e){toast('Não foi possível salvar neste navegador. Faça um backup agora.')}
+}
+
+/* ---------- utilidades ---------- */
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2200)}
+function genPw(n=16){
+  const cs='abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*?';
+  const r=crypto.getRandomValues(new Uint32Array(n));return [...r].map(x=>cs[x%cs.length]).join('');
+}
+async function copy(t){
+  try{await navigator.clipboard.writeText(t)}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove()}
+  toast('Copiado');
+}
+function ask(title,fields,ok='Salvar'){
+  return new Promise(res=>{
+    const dlg=$('#dlg'),f=$('#df');
+    f.innerHTML=`<h2>${esc(title)}</h2>`+fields.map(x=>{
+      const v=esc(x.value||''),r=x.req?'required':'';
+      let inp;
+      if(x.type==='select')inp=`<select name="${x.k}">${x.opts.map(o=>`<option value="${o[0]}">${esc(o[1])}</option>`).join('')}</select>`;
+      else if(x.area)inp=`<textarea name="${x.k}" rows="3">${v}</textarea>`;
+      else if(x.gen)inp=`<div class="pw"><input name="${x.k}" type="password" value="${v}" ${r} autocomplete="off"><button type="button" data-show>Ver</button><button type="button" data-gen>Gerar</button></div>`;
+      else inp=`<input name="${x.k}" type="${x.type||'text'}" value="${v}" ${r} autocomplete="off">`;
+      return `<label>${esc(x.label)}</label>${inp}`;
+    }).join('')+`<div class="row"><button type="button" class="ghost" data-cancel>Cancelar</button><button class="pri">${esc(ok)}</button></div>`;
+    f.onsubmit=e=>{e.preventDefault();const o={};fields.forEach(x=>o[x.k]=f.elements[x.k].value.trim());dlg.close();res(o)};
+    f.onclick=e=>{
+      const t=e.target;
+      if(t.dataset.cancel!==undefined){dlg.close();res(null)}
+      const inp=t.closest('.pw')?.querySelector('input');
+      if(t.dataset.gen!==undefined){inp.value=genPw();inp.type='text'}
+      if(t.dataset.show!==undefined)inp.type=inp.type==='password'?'text':'password';
+    };
+    dlg.oncancel=()=>res(null);
+    dlg.showModal();
+    f.querySelector('input,textarea')?.focus();
+  });
+}
+
+/* ---------- busca de itens ---------- */
+const pasta=id=>S.d.pastas.find(p=>p.id===id);
+const pessoa=(p,id)=>pasta(p).pessoas.find(x=>x.id===id);
+
+/* ---------- tela principal ---------- */
+function render(){
+  const d=S.d;
+  if(!pasta(S.sel))S.sel=d.pastas[0]?.id||null;
+  $('#side').innerHTML=`<h1>Cofre</h1>`+
+    d.pastas.map(p=>`<button class="pasta ${p.id===S.sel&&!S.q?'on':''}" data-a="sel" data-p="${p.id}"><span>${esc(p.nome)}</span><small>${p.pessoas.reduce((n,x)=>n+x.contas.length,0)}</small></button>`).join('')+
+    `<button class="ghost sm" data-a="np" style="margin-top:6px">+ Nova pasta</button><div class="sp"></div>
+     <button class="pri sm" data-a="impnav">Importar senhas do navegador</button>
+     <button class="sm" data-a="exp">Fazer backup</button>
+     <button class="sm" data-a="imp">Importar backup</button>
+     <button class="sm" data-a="lock">Bloquear</button>`;
+
+  const q=S.q.toLowerCase();
+  let h=`<div class="top"><input class="srch" id="q" type="search" placeholder="Buscar e-mail, serviço ou descrição" value="${esc(S.q)}" aria-label="Buscar"></div>`;
+  if(!d.pastas.length){
+    h+=`<div class="empty"><p>Você ainda não tem nenhuma pasta.</p><button class="pri" data-a="np">Criar a primeira pasta</button></div>`;
+  }else{
+    const P=pasta(S.sel);
+    if(!q){
+      h+=`<div class="top"><h2>${esc(P.nome)}</h2><div class="acts"><button class="pri sm" data-a="npe" data-p="${P.id}">+ Pessoa</button><button class="sm" data-a="ep" data-p="${P.id}">Renomear pasta</button><button class="sm dg" data-a="dp" data-p="${P.id}">Excluir pasta</button></div></div>`;
+      if(P.descricao)h+=`<p class="desc">${esc(P.descricao)}</p>`;
+    }
+    let n=0;
+    (q?d.pastas:[P]).forEach(pa=>pa.pessoas.forEach(pe=>{
+      const cs=pe.contas.filter(c=>!q||[pe.nome,c.titulo,c.email,c.desc,pa.nome].join(' ').toLowerCase().includes(q));
+      if(q&&!cs.length)return;
+      n++;
+      h+=`<section class="pessoa"><div class="ph"><h3>${esc(pe.nome)}${q?`<small>Pasta: ${esc(pa.nome)}</small>`:''}</h3><div class="acts">
+        <button class="pri sm" data-a="nc" data-p="${pa.id}" data-q="${pe.id}">+ E-mail e senha</button>
+        <button class="sm" data-a="epe" data-p="${pa.id}" data-q="${pe.id}">Renomear</button>
+        <button class="sm dg" data-a="dpe" data-p="${pa.id}" data-q="${pe.id}">Excluir</button></div></div>`;
+      if(!cs.length)h+=`<div class="conta nt">Nenhum e-mail salvo para esta pessoa ainda.</div>`;
+      cs.forEach(c=>{
+        const sh=S.shown.has(c.id);
+        h+=`<div class="conta"><div class="ct">${esc(c.titulo||'Sem título')}</div>
+          <div class="ln"><span class="k">E-mail</span><code>${esc(c.email)}</code><button class="sm" data-a="cp" data-p="${pa.id}" data-q="${pe.id}" data-c="${c.id}" data-f="email">Copiar</button></div>
+          <div class="ln"><span class="k">Senha</span><code>${sh?esc(c.senha):'••••••••••'}</code><button class="sm" data-a="tg" data-c="${c.id}">${sh?'Ocultar':'Ver'}</button><button class="sm" data-a="cp" data-p="${pa.id}" data-q="${pe.id}" data-c="${c.id}" data-f="senha">Copiar</button></div>
+          ${c.desc?`<div class="nt">${esc(c.desc)}</div>`:''}
+          <div class="ln" style="margin-top:8px"><button class="sm" data-a="ec" data-p="${pa.id}" data-q="${pe.id}" data-c="${c.id}">Editar</button><button class="sm dg" data-a="dc" data-p="${pa.id}" data-q="${pe.id}" data-c="${c.id}">Excluir</button></div></div>`;
+      });
+      h+=`</section>`;
+    }));
+    if(!n)h+=`<div class="empty">${q?'Nada encontrado para essa busca.':'Esta pasta ainda não tem pessoas.<br><br><button class="pri" data-a="npe" data-p="'+P.id+'">Adicionar a primeira pessoa</button>'}</div>`;
+  }
+  const had=document.activeElement?.id==='q';
+  $('#main').innerHTML=h;
+  if(had){const i=$('#q');i.focus();i.setSelectionRange(i.value.length,i.value.length)}
+}
+
+/* ---------- ações ---------- */
+async function act(el){
+  const a=el.dataset.a,D=S.d;
+  const P=el.dataset.p?pasta(el.dataset.p):null;
+  const E=P&&el.dataset.q?P.pessoas.find(x=>x.id===el.dataset.q):null;
+  const C=E&&el.dataset.c?E.contas.find(x=>x.id===el.dataset.c):null;
+  if(a==='sel'){S.sel=P.id;S.q=''}
+  else if(a==='np'){
+    const r=await ask('Nova pasta',[{k:'nome',label:'Nome da pasta',req:1,ph:''},{k:'descricao',label:'Descrição (opcional)',area:1}],'Criar pasta');
+    if(!r)return;const n={id:uid(),nome:r.nome,descricao:r.descricao,pessoas:[]};D.pastas.push(n);S.sel=n.id;S.q='';
+  }
+  else if(a==='ep'){
+    const r=await ask('Editar pasta',[{k:'nome',label:'Nome da pasta',req:1,value:P.nome},{k:'descricao',label:'Descrição (opcional)',area:1,value:P.descricao}]);
+    if(!r)return;P.nome=r.nome;P.descricao=r.descricao;
+  }
+  else if(a==='dp'){
+    if(!confirm(`Excluir a pasta "${P.nome}" e tudo que está dentro dela?`))return;
+    D.pastas=D.pastas.filter(x=>x.id!==P.id);
+  }
+  else if(a==='npe'){
+    const r=await ask('Nova pessoa',[{k:'nome',label:'Nome da pessoa',req:1}],'Adicionar');
+    if(!r)return;P.pessoas.push({id:uid(),nome:r.nome,contas:[]});
+  }
+  else if(a==='epe'){
+    const r=await ask('Renomear pessoa',[{k:'nome',label:'Nome da pessoa',req:1,value:E.nome}]);
+    if(!r)return;E.nome=r.nome;
+  }
+  else if(a==='dpe'){
+    if(!confirm(`Excluir "${E.nome}" e todos os e-mails dela?`))return;
+    P.pessoas=P.pessoas.filter(x=>x.id!==E.id);
+  }
+  else if(a==='nc'||a==='ec'){
+    const r=await ask(C?'Editar e-mail e senha':`Novo e-mail para ${E.nome}`,[
+      {k:'titulo',label:'Serviço ou título (ex.: Gmail, Instagram, Banco)',req:1,value:C?.titulo},
+      {k:'email',label:'E-mail ou usuário',req:1,value:C?.email},
+      {k:'senha',label:'Senha',req:1,gen:1,value:C?.senha},
+      {k:'desc',label:'Descrição (opcional)',area:1,value:C?.desc}]);
+    if(!r)return;
+    if(C)Object.assign(C,r);else E.contas.push({id:uid(),...r});
+  }
+  else if(a==='dc'){
+    if(!confirm('Excluir este e-mail e senha?'))return;
+    E.contas=E.contas.filter(x=>x.id!==C.id);
+  }
+  else if(a==='tg'){S.shown.has(el.dataset.c)?S.shown.delete(el.dataset.c):S.shown.add(el.dataset.c);render();return}
+  else if(a==='cp'){copy(C[el.dataset.f]);return}
+  else if(a==='lock'){location.reload();return}
+  else if(a==='exp'){await exportar();return}
+  else if(a==='imp'){$('#file').click();return}
+  else if(a==='impnav'){
+    if(!confirm('Para importar, primeiro exporte as senhas no seu navegador (veja as instruções na tela seguinte) e escolha o arquivo .csv gerado. Continuar?'))return;
+    alert('Chrome ou Edge: Configurações > Senhas > ⋮ ou "Exportar senhas".\nFirefox: digite about:logins na barra de endereço > ⋯ > Exportar logins.\nSafari: Arquivo > Exportar > Senhas.\n\nDepois escolha o arquivo .csv. Apague-o em seguida, pois ele não tem proteção.');
+    $('#fileCsv').click();return}
+  await save();render();
+}
+async function exportar(){
+  const blob=await seal(S.d,S.key,S.salt);
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(blob)],{type:'application/json'}));
+  a.download='cofre-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  toast('Backup baixado (protegido pela sua senha mestra)');
+}
+$('#file').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  let blob;try{blob=JSON.parse(await f.text());if(!blob.salt||!blob.iv||!blob.data)throw 0}catch(x){return toast('Arquivo de backup inválido')}
+  const r=await ask('Importar backup',[
+    {k:'pw',label:'Senha mestra usada neste backup',type:'password',req:1},
+    {k:'modo',label:'O que fazer com os dados atuais?',type:'select',opts:[['mesclar','Juntar com o que já tenho'],['substituir','Substituir tudo pelo backup']]}],'Importar');
+  if(!r)return;
+  try{
+    const {d}=await open(blob,r.pw);
+    if(r.modo==='substituir')S.d=d;
+    else d.pastas.forEach(p=>{p.id=uid();p.pessoas.forEach(x=>{x.id=uid();x.contas.forEach(c=>c.id=uid())});S.d.pastas.push(p)});
+    await save();render();toast('Backup importado');
+  }catch(x){toast('Senha incorreta ou arquivo danificado')}
+};
+function parseCSV(t){
+  const rows=[];let r=[],c='',q=false;
+  for(let i=0;i<t.length;i++){const ch=t[i];
+    if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}
+    else if(ch==='"')q=true;
+    else if(ch===','){r.push(c);c=''}
+    else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;r.push(c);c='';rows.push(r);r=[]}
+    else c+=ch}
+  if(c||r.length){r.push(c);rows.push(r)}
+  return rows.filter(x=>x.some(y=>y));
+}
+$('#fileCsv').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  const rows=parseCSV((await f.text()).replace(/^\uFEFF/,''));
+  const H=(rows[0]||[]).map(h=>h.trim().toLowerCase());
+  const ix=(...n)=>H.findIndex(h=>n.includes(h));
+  const iu=ix('username','login_username','user'),ip=ix('password','login_password'),
+        inm=ix('name','title'),il=ix('url','login_uri'),inn=ix('note','notes');
+  if(ip<0||iu<0)return toast('Esse arquivo não parece ser uma exportação de senhas do navegador');
+  let P=S.d.pastas.find(p=>p.nome==='Importado do navegador');
+  if(!P){P={id:uid(),nome:'Importado do navegador',descricao:'Senhas trazidas do navegador pelo arquivo .csv',pessoas:[]};S.d.pastas.push(P)}
+  let E=P.pessoas.find(x=>x.nome==='Navegador');
+  if(!E){E={id:uid(),nome:'Navegador',contas:[]};P.pessoas.push(E)}
+  let add=0,dup=0;
+  rows.slice(1).forEach(r=>{
+    const url=(r[il]||'').trim(),email=(r[iu]||'').trim(),senha=r[ip]||'';
+    if(!senha&&!email)return;
+    let titulo=(r[inm]||'').trim();
+    if(!titulo){try{titulo=new URL(url).hostname.replace(/^www\./,'')}catch(x){titulo=url||'Sem título'}}
+    if(E.contas.some(c=>c.titulo===titulo&&c.email===email&&c.senha===senha)){dup++;return}
+    E.contas.push({id:uid(),titulo,email,senha,desc:[url,(r[inn]||'').trim()].filter(Boolean).join('\n')});add++;
+  });
+  S.sel=P.id;S.q='';await save();render();
+  toast(`${add} senhas importadas`+(dup?` (${dup} repetidas ignoradas)`:''));
+};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&b.closest('#app'))act(b)});
+document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;render()}});
+
+/* ---------- tela de entrada ---------- */
+function start(){
+  const raw=localStorage.getItem('cofre'),novo=!raw,f=$('#lf');
+  f.innerHTML=`<h1>Cofre de Senhas</h1><p>${novo?'Crie uma senha mestra. Ela protege tudo e não pode ser recuperada se você esquecer.':'Digite sua senha mestra para abrir.'}</p>
+    <label>Senha mestra</label><input type="password" id="m1" required minlength="6" autocomplete="off">
+    ${novo?'<label>Repita a senha mestra</label><input type="password" id="m2" required autocomplete="off">':''}
+    <div class="err" id="er"></div><div class="row" style="margin-top:6px"><button class="pri" style="width:100%">${novo?'Criar cofre':'Abrir'}</button></div>`;
+  $('#m1').focus();
+  f.onsubmit=async e=>{
+    e.preventDefault();const pw=$('#m1').value,er=$('#er');er.textContent='';
+    try{
+      if(novo){
+        if(pw!==$('#m2').value){er.textContent='As senhas não são iguais.';return}
+        S.salt=crypto.getRandomValues(new Uint8Array(16));S.key=await derive(pw,S.salt);S.d={pastas:[]};await save();
+      }else{
+        const r=await open(JSON.parse(raw),pw);S.d=r.d;S.key=r.key;S.salt=r.salt;
+      }
+      $('#lock').hidden=true;$('#app').hidden=false;render();
+    }catch(x){er.textContent='Senha mestra incorreta.'}
+  };
+}
+if(!window.crypto?.subtle){document.body.innerHTML='<p style="padding:20px">Este navegador não suporta a proteção necessária. Abra o arquivo no Chrome, Edge ou Firefox atualizado.</p>'}
+else start();
+</script>
+</body>
+</html>
